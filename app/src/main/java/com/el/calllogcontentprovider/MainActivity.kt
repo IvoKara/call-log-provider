@@ -1,17 +1,25 @@
 package com.el.calllogcontentprovider
 
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.CallLog
 import android.widget.ListView
 import android.widget.SimpleCursorAdapter
-import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
-import java.util.jar.Manifest
 
 class MainActivity : AppCompatActivity() {
+
+    private val colsFromContentProvider = listOf<String>(
+        CallLog.Calls._ID,
+        CallLog.Calls.NUMBER,
+        CallLog.Calls.TYPE,
+        CallLog.Calls.DURATION,
+        CallLog.Calls.LAST_MODIFIED,
+        CallLog.Calls.DATE,
+        CallLog.Calls.CACHED_NAME,
+        CallLog.Calls.CACHED_NUMBER_LABEL,
+    ).toTypedArray()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,46 +54,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun displayLog() {
-        val colsFromContentProvider = listOf<String>(
-            CallLog.Calls._ID,
-            CallLog.Calls.NUMBER,
-            CallLog.Calls.TYPE,
-            CallLog.Calls.DURATION,
-            CallLog.Calls.LAST_MODIFIED,
-            CallLog.Calls.DATE,
-            CallLog.Calls.CACHED_NAME,
-            CallLog.Calls.CACHED_NUMBER_LABEL,
-        ).toTypedArray()
-
-        val from = listOf<String>(
-            CallLog.Calls.NUMBER,
-            CallLog.Calls.DURATION,
-            CallLog.Calls.TYPE
-        ).toTypedArray()
-
-        val to = intArrayOf(
-            R.id.textView1,
-            R.id.textView2,
-            R.id.textView3
-        )
-
-        val recentCalls = contentResolver.query(
+        val recentCallsCursor = contentResolver.query(
             CallLog.Calls.CONTENT_URI,
             colsFromContentProvider,
             null, null,
             "${CallLog.Calls.LAST_MODIFIED} DESC"
         )
 
-        val adapter = SimpleCursorAdapter(
-            applicationContext,
-            R.layout.activity_call_log,
-            recentCalls,
-            from, to, 0
+        val fromColumns = listOf<String>(
+            CallLog.Calls.CACHED_NAME,
+            CallLog.Calls.NUMBER,
+            CallLog.Calls.DURATION,
+            CallLog.Calls.DATE,
+            CallLog.Calls.TYPE,
+        ).toTypedArray()
+
+        val applyToViewsId = intArrayOf(
+            R.id.callerName,
+            R.id.number,
+            R.id.duration,
+            R.id.date,
+            R.id.type,
         )
 
         val listview = findViewById<ListView>(R.id.listview)
 
-        listview.adapter = adapter
+        listview.adapter = SimpleCursorAdapter(
+            applicationContext,
+            R.layout.call_log_card,
+            recentCallsCursor,
+            fromColumns, applyToViewsId, 0
+        )
     }
 
     private fun stillNotGrantedPermission(): Boolean {
