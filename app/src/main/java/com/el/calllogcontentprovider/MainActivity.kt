@@ -1,12 +1,17 @@
 package com.el.calllogcontentprovider
 
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.CallLog
+import android.util.Log
 import android.widget.ListView
 import android.widget.SimpleCursorAdapter
+import android.widget.TextView
 import androidx.core.app.ActivityCompat
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -58,7 +63,7 @@ class MainActivity : AppCompatActivity() {
             CallLog.Calls.CONTENT_URI,
             colsFromContentProvider,
             null, null,
-            "${CallLog.Calls.LAST_MODIFIED} DESC"
+            "${CallLog.Calls.DATE} DESC"
         )
 
         val fromColumns = listOf<String>(
@@ -79,12 +84,51 @@ class MainActivity : AppCompatActivity() {
 
         val listview = findViewById<ListView>(R.id.listview)
 
-        listview.adapter = SimpleCursorAdapter(
+        listview.adapter = object: SimpleCursorAdapter(
             applicationContext,
             R.layout.call_log_card,
             recentCallsCursor,
             fromColumns, applyToViewsId, 0
-        )
+        ) {
+            @SuppressLint("SimpleDateFormat")
+            override fun setViewText(v: TextView?, text: String?) {
+                var modifiedText = text
+                when (v?.id) {
+                    R.id.date -> {
+                        var dateFormat = SimpleDateFormat(
+                            "HH:mm dd/MM/yyyy",
+                        )
+
+                        dateFormat.timeZone = TimeZone.getDefault()
+
+                        modifiedText = dateFormat.format(text?.toLong()).toString()
+                    }
+                    R.id.duration -> {
+                        val totalSecs = text!!.toLong()
+                        val hours = totalSecs / 3600;
+                        val minutes = (totalSecs % 3600) / 60;
+                        val seconds = totalSecs % 60;
+
+                        modifiedText = "${
+                            if (hours > 0) "${hours}h " else ""
+                        }${
+                            if (minutes > 0) "${minutes}min " else ""
+                        }${seconds}sec"
+                    }
+                    R.id.type -> when (text!!.toInt()) {
+                        CallLog.Calls.INCOMING_TYPE ->
+                            modifiedText = "Incoming"
+                        CallLog.Calls.OUTGOING_TYPE ->
+                            modifiedText = "Outgoing"
+                        CallLog.Calls.MISSED_TYPE ->
+                            modifiedText = "Missed"
+                        CallLog.Calls.REJECTED_TYPE ->
+                            modifiedText = "Rejected"
+                    }
+                }
+                super.setViewText(v, modifiedText)
+            }
+        }
     }
 
     private fun stillNotGrantedPermission(): Boolean {
