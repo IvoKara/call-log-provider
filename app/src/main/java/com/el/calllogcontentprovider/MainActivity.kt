@@ -57,7 +57,9 @@ class MainActivity : AppCompatActivity() {
         val btn = findViewById<Button>(R.id.syncButton)
         btn.setOnClickListener {
             storeLastModifiedCallUnixDate()
-            Toast.makeText(applicationContext, "Button clicked", Toast.LENGTH_LONG).show()
+            Toast.makeText(applicationContext, "Time synced", Toast.LENGTH_LONG).show()
+            tv.text = unixTimeToHumanReadable(lastModified)
+            displayLog()
         }
 
         displayLog()
@@ -104,14 +106,14 @@ class MainActivity : AppCompatActivity() {
             "${CallLog.Calls.DATE} DESC"
         )
 
-        if (recentCallsCursor != null && recentCallsCursor.count > 0) {
             with (recentCallsCursor) {
-                moveToFirst()
-                val colIndex = getColumnIndex(CallLog.Calls.DATE)
-                val lastCallDate = getLongOrNull(colIndex)
-                if (lastCallDate != null)
-                    lastModified = lastCallDate
-            }
+                if (this != null && count > 0) {
+                    moveToFirst()
+                    val colIndex = getColumnIndex(CallLog.Calls.DATE)
+                    val lastCallDate = getLongOrNull(colIndex)
+                    if (lastCallDate != null)
+                        lastModified = lastCallDate
+                }
         }
 
         val fromColumns = listOf<String>(
