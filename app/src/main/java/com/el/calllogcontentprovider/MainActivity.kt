@@ -56,6 +56,7 @@ class MainActivity : AppCompatActivity() {
 
         val btn = findViewById<Button>(R.id.syncButton)
         btn.setOnClickListener {
+            storeLastModifiedCallUnixDate()
             Toast.makeText(applicationContext, "Button clicked", Toast.LENGTH_LONG).show()
         }
 
@@ -85,6 +86,15 @@ class MainActivity : AppCompatActivity() {
         Log.d("From shared preferences", unixTimeToHumanReadable(lastModified))
     }
 
+    private fun storeLastModifiedCallUnixDate() {
+        val sharedPref = this.getSharedPreferences("CallLog", Context.MODE_PRIVATE)
+
+        with (sharedPref.edit()) {
+            putLong("lastModified", lastModified)
+            apply()
+        }
+    }
+
     private fun displayLog() {
         val recentCallsCursor = contentResolver.query(
             CallLog.Calls.CONTENT_URI,
@@ -93,6 +103,16 @@ class MainActivity : AppCompatActivity() {
             null,
             "${CallLog.Calls.DATE} DESC"
         )
+
+        if (recentCallsCursor != null && recentCallsCursor.count > 0) {
+            with (recentCallsCursor) {
+                moveToFirst()
+                val colIndex = getColumnIndex(CallLog.Calls.DATE)
+                val lastCallDate = getLongOrNull(colIndex)
+                if (lastCallDate != null)
+                    lastModified = lastCallDate
+            }
+        }
 
         val fromColumns = listOf<String>(
             CallLog.Calls.CACHED_NAME,
