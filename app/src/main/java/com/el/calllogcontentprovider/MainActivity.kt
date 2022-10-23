@@ -96,40 +96,51 @@ class MainActivity : AppCompatActivity() {
             override fun setViewText(v: TextView?, text: String?) {
                 var modifiedText = text
                 when (v?.id) {
-                    R.id.date -> {
-                        var dateFormat = SimpleDateFormat(
-                            "HH:mm dd/MM/yyyy",
-                        )
-
-                        dateFormat.timeZone = TimeZone.getDefault()
-
-                        modifiedText = dateFormat.format(text?.toLong()).toString()
+                    R.id.date, R.id.lastModified -> {
+                        modifiedText = unixTimeToHumanReadable(text!!.toLong())
                     }
                     R.id.duration -> {
-                        val totalSecs = text!!.toLong()
-                        val hours = totalSecs / 3600;
-                        val minutes = (totalSecs % 3600) / 60;
-                        val seconds = totalSecs % 60;
-
-                        modifiedText = "${
-                            if (hours > 0) "${hours}h " else ""
-                        }${
-                            if (minutes > 0) "${minutes}min " else ""
-                        }${seconds}sec"
+                        modifiedText = secondsToHumanReadable(text!!.toLong())
                     }
-                    R.id.type -> when (text!!.toInt()) {
-                        CallLog.Calls.INCOMING_TYPE ->
-                            modifiedText = "Incoming"
-                        CallLog.Calls.OUTGOING_TYPE ->
-                            modifiedText = "Outgoing"
-                        CallLog.Calls.MISSED_TYPE ->
-                            modifiedText = "Missed"
-                        CallLog.Calls.REJECTED_TYPE ->
-                            modifiedText = "Rejected"
+                    R.id.type -> {
+                        modifiedText = callTypeToString(text!!.toInt())
                     }
                 }
                 super.setViewText(v, modifiedText)
             }
+        }
+    }
+
+    @SuppressLint("SimpleDateFormat")
+    private fun unixTimeToHumanReadable(unixTime: Long): String {
+        val dateFormat = SimpleDateFormat(
+            "HH:mm dd/MM/yyyy",
+        )
+
+        dateFormat.timeZone = TimeZone.getDefault()
+
+        return dateFormat.format(unixTime).toString()
+    }
+
+    private fun secondsToHumanReadable(totalSecs: Long): String {
+        val hours = totalSecs / 3600;
+        val minutes = (totalSecs % 3600) / 60;
+        val seconds = totalSecs % 60;
+
+        return "${
+            if (hours > 0) "${hours}h " else ""
+        }${
+            if (minutes > 0) "${minutes}min " else ""
+        }${seconds}sec"
+    }
+
+    private fun callTypeToString(type: Int): String {
+        return when (type) {
+            CallLog.Calls.INCOMING_TYPE -> "Incoming"
+            CallLog.Calls.OUTGOING_TYPE -> "Outgoing"
+            CallLog.Calls.MISSED_TYPE -> "Missed"
+            CallLog.Calls.REJECTED_TYPE -> "Rejected"
+            else -> "Unknown"
         }
     }
 
