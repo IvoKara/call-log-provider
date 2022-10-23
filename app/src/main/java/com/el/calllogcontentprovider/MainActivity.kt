@@ -2,21 +2,23 @@ package com.el.calllogcontentprovider
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.CallLog
 import android.util.Log
 import android.widget.*
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.database.getLongOrNull
 import java.text.SimpleDateFormat
 import java.util.*
 
+@RequiresApi(Build.VERSION_CODES.N)
 class MainActivity : AppCompatActivity() {
 
-    private val colsFromContentProvider = listOf<String>(
+    private val colsFromContentProvider = listOf(
         CallLog.Calls._ID,
         CallLog.Calls.NUMBER,
         CallLog.Calls.TYPE,
@@ -34,14 +36,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
 
-        if(stillNotGrantedPermission()) {
+        if (stillNotGrantedPermission()) {
             ActivityCompat.requestPermissions(
                 this,
-                Array(1) {android.Manifest.permission.READ_CALL_LOG},
+                Array(1) { android.Manifest.permission.READ_CALL_LOG },
                 101
             )
-        }
-        else {
+        } else {
             displayLog()
         }
     }
@@ -72,7 +73,7 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        if(
+        if (
             requestCode == 101 &&
             grantResults[0] == PackageManager.PERMISSION_GRANTED
         ) {
@@ -91,7 +92,7 @@ class MainActivity : AppCompatActivity() {
     private fun storeLastModifiedCallUnixDate() {
         val sharedPref = this.getSharedPreferences("CallLog", Context.MODE_PRIVATE)
 
-        with (sharedPref.edit()) {
+        with(sharedPref.edit()) {
             putLong("lastModified", lastModified)
             apply()
         }
@@ -106,17 +107,17 @@ class MainActivity : AppCompatActivity() {
             "${CallLog.Calls.DATE} DESC"
         )
 
-            with (recentCallsCursor) {
-                if (this != null && count > 0) {
-                    moveToFirst()
-                    val colIndex = getColumnIndex(CallLog.Calls.DATE)
-                    val lastCallDate = getLongOrNull(colIndex)
-                    if (lastCallDate != null)
-                        lastModified = lastCallDate
-                }
+        with(recentCallsCursor) {
+            if (this != null && count > 0) {
+                moveToFirst()
+                val colIndex = getColumnIndex(CallLog.Calls.DATE)
+                val lastCallDate = getLongOrNull(colIndex)
+                if (lastCallDate != null)
+                    lastModified = lastCallDate
+            }
         }
 
-        val fromColumns = listOf<String>(
+        val fromColumns = listOf(
             CallLog.Calls.CACHED_NAME,
             CallLog.Calls.NUMBER,
             CallLog.Calls.DURATION,
@@ -136,7 +137,7 @@ class MainActivity : AppCompatActivity() {
 
         val listview = findViewById<ListView>(R.id.listview)
 
-        listview.adapter = object: SimpleCursorAdapter(
+        listview.adapter = object : SimpleCursorAdapter(
             applicationContext,
             R.layout.call_log_card,
             recentCallsCursor,
@@ -161,11 +162,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getLastCallDateInUnixTime() : Long {
+    private fun getLastCallDateInUnixTime(): Long {
         var lastCallDate: Long? = null
         val lastModifiedCursor = contentResolver.query(
             CallLog.Calls.CONTENT_URI,
-            listOf<String>(CallLog.Calls.DATE).toTypedArray(),
+            listOf(CallLog.Calls.DATE).toTypedArray(),
             null, null,
             "${CallLog.Calls.DATE} DESC"
         )
@@ -175,7 +176,9 @@ class MainActivity : AppCompatActivity() {
             lastCallDate = lastModifiedCursor.getLongOrNull(0)
         }
 
-        return lastCallDate ?: System.currentTimeMillis() / 1000
+        lastModifiedCursor?.close()
+
+        return lastCallDate ?: (System.currentTimeMillis() / 1000)
     }
 
     @SuppressLint("SimpleDateFormat")
@@ -190,9 +193,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun secondsToHumanReadable(totalSecs: Long): String {
-        val hours = totalSecs / 3600;
-        val minutes = (totalSecs % 3600) / 60;
-        val seconds = totalSecs % 60;
+        val hours = totalSecs / 3600
+        val minutes = (totalSecs % 3600) / 60
+        val seconds = totalSecs % 60
 
         return "${
             if (hours > 0) "${hours}h " else ""
