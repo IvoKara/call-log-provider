@@ -1,15 +1,16 @@
 package com.el.calllogcontentprovider
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.CallLog
 import android.util.Log
-import android.widget.ListView
-import android.widget.SimpleCursorAdapter
-import android.widget.TextView
+import android.widget.*
 import androidx.core.app.ActivityCompat
+import androidx.core.database.getLongOrNull
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -25,6 +26,8 @@ class MainActivity : AppCompatActivity() {
         CallLog.Calls.CACHED_NAME,
         CallLog.Calls.CACHED_NUMBER_LABEL,
     ).toTypedArray()
+
+    private var lastModified: Long = System.currentTimeMillis() / 1000
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +46,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+
+        getLastModifiedCallUnixDate()
+
+        val tv = findViewById<TextView>(R.id.lastModifiedAll)
+        tv.text = unixTimeToHumanReadable(lastModified)
+
+        val btn = findViewById<Button>(R.id.syncButton)
+        btn.setOnClickListener {
+            Toast.makeText(applicationContext, "Button clicked", Toast.LENGTH_LONG).show()
+        }
+
+        displayLog()
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -58,11 +77,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getLastModifiedCallUnixDate() {
+        val sharedPref = this.getSharedPreferences("CallLog", Context.MODE_PRIVATE)
+        val defaultValue = getLastCallDateInUnixTime()
+        Log.d("Default value", unixTimeToHumanReadable(defaultValue))
+        lastModified = sharedPref.getLong("lastModified", defaultValue)
+        Log.d("From shared preferences", unixTimeToHumanReadable(lastModified))
+    }
+
     private fun displayLog() {
         val recentCallsCursor = contentResolver.query(
             CallLog.Calls.CONTENT_URI,
             colsFromContentProvider,
-            null, null,
+            "${CallLog.Calls.DATE} > $lastModified",
+            null,
             "${CallLog.Calls.DATE} DESC"
         )
 
@@ -109,6 +137,23 @@ class MainActivity : AppCompatActivity() {
                 super.setViewText(v, modifiedText)
             }
         }
+    }
+
+    private fun getLastCallDateInUnixTime() : Long {
+        var lastCallDate: Long? = null
+        val lastModifiedCursor = contentResolver.query(
+            CallLog.Calls.CONTENT_URI,
+            listOf<String>(CallLog.Calls.DATE).toTypedArray(),
+            null, null,
+            "${CallLog.Calls.DATE} DESC"
+        )
+
+        if (lastModifiedCursor != null) {
+            lastModifiedCursor.moveToFirst()
+            lastCallDate = lastModifiedCursor.getLongOrNull(0)
+        }
+
+        return lastCallDate ?: System.currentTimeMillis() / 1000
     }
 
     @SuppressLint("SimpleDateFormat")
