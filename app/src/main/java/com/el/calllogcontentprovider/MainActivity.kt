@@ -71,6 +71,7 @@ class MainActivity : AppCompatActivity() {
             CallLog.Calls.NUMBER,
             CallLog.Calls.DURATION,
             CallLog.Calls.DATE,
+            CallLog.Calls.LAST_MODIFIED,
             CallLog.Calls.TYPE,
         ).toTypedArray()
 
@@ -79,6 +80,7 @@ class MainActivity : AppCompatActivity() {
             R.id.number,
             R.id.duration,
             R.id.date,
+            R.id.lastModified,
             R.id.type,
         )
 
